@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000001 Mon Sep 17 00:00:00 2001
+From: Qualcomm Technologies, Inc. <linux-qcom@qualcomm.com>
+Date: Tue, 16 Sep 2026 00:00:00 +0000
+Subject: [PATCH 2/2] gpio: pca953x: add dev_err_probe logging to probe error paths
+
+Silent error returns in pca953x_probe() make it hard to diagnose
+failures when new expander nodes are added to the device tree but
+the hardware is not present or not responding. Use dev_err_probe()
+so that -EPROBE_DEFER cases are suppressed while real errors are
+visible in the kernel log.
+
+Upstream-Status: Pending
+
+Signed-off-by: Qualcomm Technologies, Inc. <linux-qcom@qualcomm.com>
+---
+ drivers/gpio/gpio-pca953x.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpio/gpio-pca953x.c b/drivers/gpio/gpio-pca953x.c
+index abcdef5..abcdef6 100644
+--- a/drivers/gpio/gpio-pca953x.c
++++ b/drivers/gpio/gpio-pca953x.c
+@@ -1266,7 +1266,8 @@
+
+ 	chip->regmap = devm_regmap_init_i2c(client, regmap_config);
+ 	if (IS_ERR(chip->regmap))
+-		return PTR_ERR(chip->regmap);
++		return dev_err_probe(dev, PTR_ERR(chip->regmap),
++				     "failed to init regmap\n");
+
+ 	regcache_mark_dirty(chip->regmap);
+
+@@ -1308,13 +1309,17 @@
+ 		break;
+ 	}
+ 	if (ret)
+-		return ret;
++		return dev_err_probe(dev, ret, "failed to init chip registers\n");
+
+ 	ret = pca953x_irq_setup(chip, irq_base);
+ 	if (ret)
+ 		return ret;
+
+-	return devm_gpiochip_add_data(dev, &chip->gpio_chip, chip);
++	ret = devm_gpiochip_add_data(dev, &chip->gpio_chip, chip);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to add gpiochip\n");
++
++	return 0;
+ }
+
+ static int pca953x_regcache_sync(struct pca953x_chip *chip)
+--
+2.39.0
