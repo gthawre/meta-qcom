@@ -31,6 +31,14 @@ SRC_URI += " \
     file://configs/bsp-additions.cfg \
 "
 
+# LeMans Draco EVK board support (pending upstream).
+SRC_URI += " \
+    file://patches/0001-dt-bindings-arm-qcom-Add-LeMans-Draco-EVK-compatible.patch \
+    file://patches/0002-arm64-dts-qcom-Add-lemans-draco-evk.dtb-to-Makefile.patch \
+    file://patches/0003-arm64-dts-qcom-Add-LeMans-Draco-EVK-SOM-device-tree.patch \
+    file://patches/0004-arm64-dts-qcom-lemans-draco-evk-add-device-tree-support.patch \
+"
+
 # To build tip of qcom-next branch set preferred
 # virtual/kernel provider to 'linux-qcom-next-upstream'
 BBCLASSEXTEND = "devupstream:target"
